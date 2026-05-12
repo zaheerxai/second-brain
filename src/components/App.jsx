@@ -1,3 +1,4 @@
+import { callLLM } from '../services/llm'
 import { useState, useEffect, useRef } from 'react'
 import { MessageCircle, CheckSquare, BookOpen, FileText, Brain, Send,
          CheckCircle2, Loader2, ChevronUp, ChevronDown, Trash2, LogOut } from 'lucide-react'
@@ -196,19 +197,10 @@ export default function App() {
       const history = [...msgs, userMsg].slice(-24)
         .map(m => ({ role: m.role, content: m.content }))
 
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 1000,
-          system: buildPrompt(profile, tasks, notes, journal),
-          messages: history,
-        }),
-      })
-
-      const data = await res.json()
-      const raw  = data.content?.[0]?.text || '{"message":"Something went wrong.","actions":[]}'
+      const raw = await callLLM(
+        buildPrompt(profile, tasks, notes, journal),
+        [...msgs, userMsg].slice(-24).map(m => ({ role: m.role, content: m.content }))
+      )
 
       let parsed
       try {
