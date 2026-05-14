@@ -1,11 +1,13 @@
 import { useState } from 'react'
-import { Brain, Mail, Lock, Loader2, AlertCircle, Eye, EyeOff } from 'lucide-react'
+import { Brain, Mail, Lock, Loader2, AlertCircle, Eye, EyeOff, User, Phone } from 'lucide-react' // Added User & Phone icons
 import { api } from '../services/api'
 
 export default function Auth({ onAuth }) {
   const [mode, setMode]       = useState('signin')   // 'signin' | 'signup'
   const [email, setEmail]     = useState('')
   const [password, setPass]   = useState('')
+  const [name, setName]       = useState('')         // NEW: Name state
+  const [phone, setPhone]     = useState('')         // NEW: Phone state
   const [showPass, setShow]   = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState('')
@@ -13,12 +15,20 @@ export default function Auth({ onAuth }) {
 
   const submit = async (e) => {
     e.preventDefault()
+    
+    // Updated validation to require name and phone during signup
     if (!email || !password) return
+    if (mode === 'signup' && (!name || !phone)) {
+      setError('Please fill in all fields.')
+      return
+    }
+    
     setError(''); setInfo(''); setLoading(true)
 
     try {
       if (mode === 'signup') {
-        await api.auth.signUp(email, password)
+        // NEW: Passing phone and name to your updated api.js function
+        await api.auth.signUp(email, password, phone, name)
         setInfo('Check your email for a confirmation link, then sign in.')
         setMode('signin')
       } else {
@@ -55,6 +65,9 @@ export default function Auth({ onAuth }) {
     </div>
   )
 
+  // Disable logic updated to account for the new fields
+  const isSubmitDisabled = loading || !email || !password || (mode === 'signup' && (!name || !phone));
+
   return (
     <div style={{
       minHeight: '100vh', background: '#080a0f', display: 'flex', alignItems: 'center',
@@ -82,8 +95,12 @@ export default function Auth({ onAuth }) {
             width: 52, height: 52, borderRadius: 14, margin: '0 auto 14px',
             background: 'linear-gradient(135deg,rgba(124,58,237,0.4),rgba(79,70,229,0.4))',
             border: '1px solid rgba(124,58,237,0.35)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24,
-          }}>🧠</div>
+            display: 'flex', alignItems: 'center', justifyContent: 'center', 
+            fontSize: 24,
+          }}>
+            {/* Replace the 🧠 emoji with the Brain component */}
+            <Brain size={28} color="#a78bfa" /> 
+          </div>
           <div style={{ fontFamily: 'monospace', fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(167,139,250,0.6)', marginBottom: 4 }}>Second Brain</div>
           <div style={{ fontSize: 20, fontWeight: 700, color: '#e2e8f0', letterSpacing: -0.5 }}>
             {mode === 'signin' ? 'Welcome back' : 'Create account'}
@@ -94,6 +111,15 @@ export default function Auth({ onAuth }) {
         </div>
 
         <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          
+          {/* NEW: Conditional Fields for Signup */}
+          {mode === 'signup' && (
+            <>
+              {field(<User size={14}/>, 'text', name, setName, 'Full Name')}
+              {field(<Phone size={14}/>, 'tel', phone, setPhone, 'WhatsApp No. (e.g. 923...)')}
+            </>
+          )}
+
           {field(<Mail size={14}/>, 'email',    email,    setEmail, 'Email address')}
           {field(<Lock size={14}/>, showPass ? 'text' : 'password', password, setPass,  'Password',
             showPass ? <EyeOff size={14}/> : <Eye size={14}/>
@@ -111,12 +137,12 @@ export default function Auth({ onAuth }) {
             </div>
           )}
 
-          <button type="submit" disabled={loading || !email || !password}
+          <button type="submit" disabled={isSubmitDisabled}
             style={{
               marginTop: 4, padding: '12px', borderRadius: 10, fontSize: 13.5, fontWeight: 600, cursor: 'pointer',
-              background: (loading || !email || !password) ? 'rgba(255,255,255,0.04)' : 'linear-gradient(135deg,rgba(52,211,153,0.85),rgba(16,185,129,0.85))',
-              border: (loading || !email || !password) ? '1px solid rgba(255,255,255,0.07)' : '1px solid rgba(52,211,153,0.4)',
-              color: (loading || !email || !password) ? '#2a3a50' : '#001a10',
+              background: isSubmitDisabled ? 'rgba(255,255,255,0.04)' : 'linear-gradient(135deg,rgba(52,211,153,0.85),rgba(16,185,129,0.85))',
+              border: isSubmitDisabled ? '1px solid rgba(255,255,255,0.07)' : '1px solid rgba(52,211,153,0.4)',
+              color: isSubmitDisabled ? '#2a3a50' : '#001a10',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'all .2s',
             }}>
             {loading ? <><Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }}/> Processing…</> : mode === 'signin' ? 'Sign In' : 'Create Account'}
