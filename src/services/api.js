@@ -14,13 +14,23 @@ const handle = async (promise) => {
 export const api = {
 
   auth: {
-    signUp:      (email, password) =>
-      handle(supabase.auth.signUp({ email, password })),
-    signIn:      (email, password) =>
+    // Added phone and name parameters, passed into options.data
+    signUp: (email, password, phone, name) =>
+      handle(supabase.auth.signUp({ 
+        email, 
+        password,
+        options: {
+          data: {
+            phone: phone,
+            name: name
+          }
+        }
+      })),
+    signIn: (email, password) =>
       handle(supabase.auth.signInWithPassword({ email, password })),
-    signOut:     () =>
+    signOut: () =>
       handle(supabase.auth.signOut()),
-    getSession:  () =>
+    getSession: () =>
       supabase.auth.getSession(),
     onAuthChange: (cb) =>
       supabase.auth.onAuthStateChange(cb),
